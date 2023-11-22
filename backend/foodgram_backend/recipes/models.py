@@ -30,7 +30,7 @@ class Recipe(models.Model):
     )
     tags = models.ManyToManyField(Tag, blank=True)
     ingredients = models.ManyToManyField(
-        Ingredient, through='RecipeIngredient', blank=True
+        Ingredient, blank=True
     )
     is_favorited = models.BooleanField(default=False)
     is_in_shopping_cart = models.BooleanField(default=False)
