@@ -30,12 +30,12 @@ class Recipe(models.Model):
     )
     tags = models.ManyToManyField(Tag, blank=True)
     ingredients = models.ManyToManyField(
-        Ingredient, blank=True
+        Ingredient, through='RecipeIngredient'
     )
     is_favorited = models.BooleanField(default=False)
     is_in_shopping_cart = models.BooleanField(default=False)
     name = models.CharField(max_length=200)
-    image = models.ImageField(upload_to='recipe_images/')
+    image = models.ImageField(upload_to='recipe_images/', null=True)
     text = models.TextField()
     cooking_time = models.PositiveIntegerField()
 
@@ -47,3 +47,6 @@ class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     amount = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"{self.amount} {self.ingredient.name}"

@@ -17,19 +17,32 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = RecipeIngredient
-        fields = ['ingredient', 'amount']
+        fields = ['id', 'amount']
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True, read_only=True)
     author = MyUserSerializer(read_only=True)
-    ingredients = RecipeIngredientSerializer(many=True, read_only=True)
+    ingredients = serializers.ListField(write_only=True)
+    # ingredients = RecipeIngredientSerializer(many=True)
 
     class Meta:
         model = Recipe
-        fields = [
-            'id', 'tags', 'author', 'ingredients', 'is_favorited',
-            'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
-        ]
+        fields = '__all__'
+
+    def create(self, validated_data):
+        ingredients_data = validated_data.pop('ingredients', [])
+        recipe = Recipe.objects.create(**validated_data)
+
+        for ingredient_data in ingredients_data:
+            ingredient_id = ingredient_data['id']
+            amount = ingredient_data['amount']
+            ingredient = Ingredient.objects.get(pk=ingredient_id)
+
+            RecipeIngredient.objects.create(
+                recipe=recipe, ingredient=ingredient, amount=amount
+            )
+
+        return recipe

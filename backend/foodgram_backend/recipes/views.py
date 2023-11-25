@@ -1,6 +1,9 @@
 from rest_framework import viewsets
-from .models import Recipe, Tag, Ingredient
-from .serializers import RecipeSerializer, TagSerializer, IngredientSerializer
+from .models import Recipe, RecipeIngredient, Tag, Ingredient
+from .serializers import (
+    RecipeSerializer, RecipeIngredientSerializer,
+    TagSerializer, IngredientSerializer
+)
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -16,7 +19,8 @@ class IngredientViewSet(viewsets.ModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    # permission_classes = [permissions.IsAuthenticated]
 
-    # def perform_create(self, serializer):
-    #     serializer.save(user=self.request.user)
+
+class RecipeIngredientViewSet(viewsets.ModelViewSet):
+    queryset = RecipeIngredient.objects.all()
+    serializer_class = RecipeIngredientSerializer
