@@ -1,7 +1,9 @@
 from rest_framework import serializers
+from django.utils.text import slugify
+from transliterate import translit
 
 from .models import Ingredient, Recipe, RecipeIngredient, Tag
-from users.serializers import MyUserSerializer
+# from users.serializers import MyUserSerializer
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -9,40 +11,68 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = ['id', 'name', 'color', 'slug']
 
+    def create(self, validated_data):
+        transliterated_name = translit(
+            validated_data['name'], 'ru', reversed=True
+            )
+        validated_data['slug'] = slugify(transliterated_name)
+
+        tag = Tag.objects.create(**validated_data)
+        return tag
+
 
 class IngredientSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Ingredient
         fields = ['id', 'name', 'measurement_unit']
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='ingredient.id')
+    name = serializers.CharField(source='ingredient.name', required=False)
+    measurement_unit = serializers.CharField(
+        source='ingredient.measurement_unit', required=False
+    )
 
     class Meta:
         model = RecipeIngredient
-        fields = ['id', 'amount']
+        fields = [
+            'id', 'name',
+            'measurement_unit', 'amount'
+        ]
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    author = MyUserSerializer(read_only=True)
-    ingredients = serializers.ListField(write_only=True)
-    # ingredients = RecipeIngredientSerializer(many=True)
+    ingredients = RecipeIngredientSerializer(
+        source='recipe_ingredients', many=True, read_only=False
+    )
+    tags = serializers.PrimaryKeyRelatedField(
+        queryset=Tag.objects.all(), many=True, required=False
+    )
 
     class Meta:
         model = Recipe
-        fields = '__all__'
+        fields = [
+            'id', 'ingredients', 'tags', 'is_favorited',
+            'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
+        ]
 
     def create(self, validated_data):
-        ingredients_data = validated_data.pop('ingredients', [])
+        ingredients_data = validated_data.pop('recipe_ingredients', [])
+        tags_data = validated_data.pop('tags', [])
+
         recipe = Recipe.objects.create(**validated_data)
 
         for ingredient_data in ingredients_data:
-            ingredient_id = ingredient_data['id']
+            ingredient_id = ingredient_data['ingredient']['id']
             amount = ingredient_data['amount']
             ingredient = Ingredient.objects.get(pk=ingredient_id)
 
             RecipeIngredient.objects.create(
                 recipe=recipe, ingredient=ingredient, amount=amount
             )
+
+        recipe.tags.set(tags_data)
 
         return recipe

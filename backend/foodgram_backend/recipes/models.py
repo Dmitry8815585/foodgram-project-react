@@ -1,5 +1,5 @@
 from django.db import models
-from django.utils.text import slugify
+# from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 
 
@@ -8,9 +8,9 @@ class Tag(models.Model):
     color = models.CharField(max_length=7, default="#000000")
     slug = models.SlugField(unique=True, blank=True)
 
-    def save(self, *args, **kwargs):
-        self.slug = slugify(self.name)
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     self.slug = slugify(self.name)
+    #     super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -44,8 +44,14 @@ class Recipe(models.Model):
 
 
 class RecipeIngredient(models.Model):
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE,
+        related_name='recipe_ingredients'
+    )
+    ingredient = models.ForeignKey(
+        Ingredient, on_delete=models.CASCADE,
+        related_name='ingredient_to_recipe'
+    )
     amount = models.PositiveIntegerField()
 
     def __str__(self):
