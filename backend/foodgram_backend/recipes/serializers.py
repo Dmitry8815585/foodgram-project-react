@@ -47,8 +47,8 @@ class RecipeSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientSerializer(
         source='recipe_ingredients', many=True, read_only=False
     )
-    tags = serializers.PrimaryKeyRelatedField(
-        queryset=Tag.objects.all(), many=True, required=False
+    tags = serializers.ListField(
+        child=serializers.IntegerField(), write_only=True
     )
 
     class Meta:
@@ -76,6 +76,14 @@ class RecipeSerializer(serializers.ModelSerializer):
         recipe.tags.set(tags_data)
 
         return recipe
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        tags_representation = TagSerializer(
+            instance.tags.all(), many=True
+        ).data
+        representation['tags'] = tags_representation
+        return representation
 
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
