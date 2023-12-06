@@ -28,11 +28,16 @@ class Recipe(models.Model):
     ingredients = models.ManyToManyField(
         Ingredient, through='RecipeIngredient'
     )
-    is_in_shopping_cart = models.BooleanField(default=False)
+    shopping_cart_users = models.ManyToManyField(
+        MyUser, related_name='shopping_cart', through='ShoppingCartItem'
+    )
     name = models.CharField(max_length=200)
     image = models.ImageField(upload_to='recipe_images/', null=True)
     text = models.TextField()
     cooking_time = models.PositiveIntegerField()
+
+    def is_in_user_shopping_cart(self, user):
+        return self.shopping_cart_users.filter(pk=user.pk).exists()
 
     def __str__(self):
         return self.name
@@ -61,3 +66,12 @@ class UserFavoriteRecipe(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s favorite: {self.recipe.name}"
+
+
+class ShoppingCartItem(models.Model):
+    user = models.ForeignKey(MyUser, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s shopping cart: {self.recipe.name}"

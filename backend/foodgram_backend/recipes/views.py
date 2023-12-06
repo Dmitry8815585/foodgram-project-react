@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from .models import (
-    Recipe, RecipeIngredient, Tag,
+    Recipe, RecipeIngredient, ShoppingCartItem, Tag,
     Ingredient, UserFavoriteRecipe
 )
 from .serializers import (
@@ -12,7 +12,9 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import (
+    IsAuthenticated, IsAuthenticatedOrReadOnly
+)
 from django.http import HttpResponse
 from collections import defaultdict
 from .permissions import IsRecipeAuthor
@@ -34,7 +36,7 @@ class IngredientViewSet(viewsets.ModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = [IsAuthenticated, IsRecipeAuthor]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsRecipeAuthor]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -72,15 +74,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
             methods=['post', 'delete'],
             permission_classes=[IsAuthenticated]
         )
+    @action(detail=True, methods=['post', 'delete'])
     def shopping_cart(self, request, pk=None):
         recipe = self.get_object()
+        user = request.user
 
         if request.method == 'POST':
-            recipe.is_in_shopping_cart = True
-            recipe.save()
+            ShoppingCartItem.objects.get_or_create(user=user, recipe=recipe)
         elif request.method == 'DELETE':
-            recipe.is_in_shopping_cart = False
-            recipe.save()
+            ShoppingCartItem.objects.filter(user=user, recipe=recipe).delete()
 
         response_data = {
             'id': recipe.id,
@@ -89,18 +91,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 recipe.image
             ) else None,
             'cooking_time': recipe.cooking_time,
+            'is_in_shopping_cart': recipe.is_in_user_shopping_cart(user),
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
 
     @action(
-            detail=False,
-            methods=['get'],
-            permission_classes=[IsAuthenticated]
-        )
+        detail=False,
+        methods=['get'],
+        permission_classes=[IsAuthenticated]
+    )
     def download_shopping_cart(self, request):
         recipes_in_cart = Recipe.objects.filter(
-            user=request.user, is_in_shopping_cart=True
+            shopping_cart_users=request.user
         )
 
         shopping_cart_dict = defaultdict(int)
@@ -112,7 +115,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         shopping_cart_text = "\n".join(
             f"{key} ----- {amount}"
-            f" {ingredient.ingredient.measurement_unit}" for (
+            f" ({ingredient.ingredient.measurement_unit})" for (
                 key, amount
             ) in shopping_cart_dict.items()
         )
