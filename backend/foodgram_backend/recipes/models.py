@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from users.models import MyUser
 
 
 class Tag(models.Model):
@@ -12,7 +13,7 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     measurement_unit = models.CharField(max_length=10)
 
     def __str__(self):
@@ -27,7 +28,6 @@ class Recipe(models.Model):
     ingredients = models.ManyToManyField(
         Ingredient, through='RecipeIngredient'
     )
-    is_favorited = models.BooleanField(default=False)
     is_in_shopping_cart = models.BooleanField(default=False)
     name = models.CharField(max_length=200)
     image = models.ImageField(upload_to='recipe_images/', null=True)
@@ -51,3 +51,13 @@ class RecipeIngredient(models.Model):
 
     def __str__(self):
         return f"{self.amount} {self.ingredient.name}"
+
+
+class UserFavoriteRecipe(models.Model):
+    user = models.ForeignKey(
+        MyUser, on_delete=models.CASCADE, related_name='favorite_recipes'
+    )
+    recipe = models.ForeignKey('Recipe', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.user.username}'s favorite: {self.recipe.name}"

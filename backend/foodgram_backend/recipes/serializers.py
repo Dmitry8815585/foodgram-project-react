@@ -2,8 +2,23 @@ from rest_framework import serializers
 from django.utils.text import slugify
 from transliterate import translit
 
-from .models import Ingredient, Recipe, RecipeIngredient, Tag
-# from users.serializers import MyUserSerializer
+from .models import (
+    Ingredient, Recipe, RecipeIngredient, Tag, UserFavoriteRecipe
+)
+from users.models import MyUser
+
+import base64
+from django.core.files.base import ContentFile
+
+
+class Base64ImageField(serializers.ImageField):
+    def to_internal_value(self, data):
+        if isinstance(data, str) and data.startswith('data:image'):
+            format, imgstr = data.split(';base64,')
+            ext = format.split('/')[-1]
+            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
+
+        return super().to_internal_value(data)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -43,6 +58,12 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
         ]
 
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MyUser
+        fields = ['id', 'email', 'username', 'first_name', 'last_name']
+
+
 class RecipeSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientSerializer(
         source='recipe_ingredients', many=True, read_only=False
@@ -50,13 +71,26 @@ class RecipeSerializer(serializers.ModelSerializer):
     tags = serializers.ListField(
         child=serializers.IntegerField(), write_only=True
     )
+    image = Base64ImageField(required=False, allow_null=True)
+    author = UserSerializer(source='user', read_only=True)
+    is_favorited = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
         fields = [
-            'id', 'ingredients', 'tags', 'is_favorited',
+            'id', 'tags', 'author', 'ingredients',  'is_favorited',
             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
         ]
+
+    def get_is_favorited(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            user_favorite = UserFavoriteRecipe.objects.filter(
+                user=request.user,
+                recipe=obj
+            ).exists()
+            return user_favorite
+        return False
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('recipe_ingredients', [])
@@ -82,7 +116,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         tags_representation = TagSerializer(
             instance.tags.all(), many=True
         ).data
+
         representation['tags'] = tags_representation
+
         return representation
 
     def update(self, instance, validated_data):
