@@ -14,7 +14,7 @@ router.register(r'ingredients', IngredientViewSet)
 router.register(
     r'recipesingredients', RecipeIngredientViewSet)
 router.register(r'recipes', RecipeViewSet)
-router.register(r'users', MyUserViewSet)
+router.register(r'users', MyUserViewSet, basename='user')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
