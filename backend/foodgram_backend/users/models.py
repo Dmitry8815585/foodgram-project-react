@@ -20,6 +20,7 @@ class MyUser(AbstractUser):
 
 
 class UserSubscription(models.Model):
+
     from_user = models.ForeignKey(
         'MyUser', related_name='subscriptions_from', on_delete=models.CASCADE
     )
