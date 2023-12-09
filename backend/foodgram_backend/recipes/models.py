@@ -32,7 +32,7 @@ class Recipe(models.Model):
         MyUser, related_name='shopping_cart', through='ShoppingCartItem'
     )
     name = models.CharField(max_length=200)
-    image = models.ImageField(upload_to='recipe_images/', null=True)
+    image = models.ImageField(upload_to='recipe_images/')
     text = models.TextField()
     cooking_time = models.PositiveIntegerField()
 

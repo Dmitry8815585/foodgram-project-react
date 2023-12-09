@@ -8,7 +8,6 @@ from .serializers import (
     TagSerializer, IngredientSerializer
 )
 
-from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
@@ -18,19 +17,29 @@ from rest_framework.permissions import (
 from django.http import HttpResponse
 from collections import defaultdict
 from .permissions import IsRecipeAuthor
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.pagination import PageNumberPagination
 
 
-class TagViewSet(viewsets.ModelViewSet):
+class MyPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'limit'
+    max_page_size = 1000
+
+
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    pagination_class = None
 
 
-class IngredientViewSet(viewsets.ModelViewSet):
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    pagination_class = None
 
-    filter_backends = (SearchFilter, OrderingFilter)
-    search_fields = ('name',)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['name']
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -39,6 +48,62 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly, IsRecipeAuthor]
 
     def perform_create(self, serializer):
+        ingredients_data = self.request.data.get('ingredients', [])
+        tags_data = self.request.data.get('tags', [])
+
+        for ingredient_data in ingredients_data:
+            ingredient_id = ingredient_data.get('ingredient')
+            if not Ingredient.objects.filter(pk=ingredient_id).exists():
+                return Response(
+                    {'detail': (
+                        f'Ingredient with id {ingredient_id} does not exist.'
+                    )},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            amount = ingredient_data.get('amount')
+            if amount is not None and amount < 1:
+                return Response(
+                    {'detail': (
+                        'Ingredient amount must be greater than or equal to 1.'
+                    )},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        if len(ingredients_data) != len(
+            set((item['ingredient'] for item in ingredients_data))
+        ):
+            return Response(
+                {'detail': 'Duplicate ingredients are not allowed.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if len(tags_data) != len(set(tags_data)):
+            return Response(
+                {'detail': 'Duplicate tags are not allowed.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        for tag_id in tags_data:
+            if not Tag.objects.filter(pk=tag_id).exists():
+                return Response(
+                    {'detail': f'Tag with id {tag_id} does not exist.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        if not self.request.data.get('image'):
+            return Response(
+                {'detail': 'Image field is required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        cooking_time = self.request.data.get('cooking_time')
+        if cooking_time is not None and cooking_time < 1:
+            return Response(
+                {'detail': 'Cooking time must be greater than or equal to 1.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         serializer.save(user=self.request.user)
 
     @action(detail=True, methods=['post', 'delete'])

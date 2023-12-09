@@ -2,7 +2,6 @@ from djoser.views import UserViewSet
 
 from users.models import UserSubscription
 from .serializers import (
-    MyUserCreateSerializer,
     MyUserProfileSerializer,
     MyUserSubscriptionSerializer
 )
@@ -12,15 +11,30 @@ from rest_framework.response import Response
 from rest_framework.permissions import (
     IsAuthenticatedOrReadOnly
 )
+from rest_framework.pagination import PageNumberPagination
+
+
+class MyPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'limit'
+    max_page_size = 1000
 
 
 class MyUserViewSet(UserViewSet):
-    serializer_class = MyUserCreateSerializer
+    serializer_class = MyUserProfileSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+    pagination_class = MyPagination
 
     @action(detail=False, methods=['get'], url_path='me')
     def current_user(self, request):
         user = self.request.user
+
+        if not user.is_authenticated:
+            return Response(
+                {'detail': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
         serializer = MyUserProfileSerializer(
             user, context={'request': request}
         )
@@ -29,7 +43,9 @@ class MyUserViewSet(UserViewSet):
     @action(detail=True, methods=['get'])
     def profile(self, request, pk=None):
         user = self.get_object()
-        serializer = MyUserProfileSerializer(user)
+        serializer = MyUserProfileSerializer(
+            user, context={'request': request}
+        )
         return Response(serializer.data)
 
     @action(detail=True, methods=['post', 'delete'])

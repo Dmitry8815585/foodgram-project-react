@@ -1,12 +1,12 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.core.validators import validate_slug
+# from django.core.validators import validate_slug
 
 
 class MyUser(AbstractUser):
     email = models.EmailField(unique=True, max_length=254)
     username = models.CharField(
-        max_length=150, unique=True, validators=[validate_slug]
+        max_length=150, unique=True
     )
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
