@@ -9,6 +9,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import (
+    AllowAny,
     IsAuthenticatedOrReadOnly
 )
 from rest_framework.pagination import PageNumberPagination
@@ -22,7 +23,7 @@ class MyPagination(PageNumberPagination):
 
 class MyUserViewSet(UserViewSet):
     serializer_class = MyUserProfileSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [AllowAny]
     pagination_class = MyPagination
 
     @action(detail=False, methods=['get'], url_path='me')

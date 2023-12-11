@@ -12,7 +12,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import (
-    IsAuthenticated, IsAuthenticatedOrReadOnly
+    AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 )
 from django.http import HttpResponse
 from collections import defaultdict
@@ -31,12 +31,14 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = None
+    permission_classes = [AllowAny]
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
+    permission_classes = [AllowAny]
 
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['name']
@@ -46,6 +48,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsRecipeAuthor]
+
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['tags__name', 'user_id']
 
     def perform_create(self, serializer):
         ingredients_data = self.request.data.get('ingredients', [])

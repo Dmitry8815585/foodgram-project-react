@@ -39,6 +39,9 @@ class Recipe(models.Model):
     def is_in_user_shopping_cart(self, user):
         return self.shopping_cart_users.filter(pk=user.pk).exists()
 
+    def count_favorite_users(self):
+        return self.userfavoriterecipe_set.count()
+
     def __str__(self):
         return self.name
 
