@@ -1,18 +1,14 @@
-from djoser.views import UserViewSet
-
-from users.models import UserSubscription
+from users.models import MyUser, UserSubscription
 from .serializers import (
+    MyUserCreateSerializer,
     MyUserProfileSerializer,
     MyUserSubscriptionSerializer
 )
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import (
-    AllowAny,
-    IsAuthenticatedOrReadOnly
-)
 from rest_framework.pagination import PageNumberPagination
+from rest_framework import viewsets
 
 
 class MyPagination(PageNumberPagination):
@@ -21,10 +17,42 @@ class MyPagination(PageNumberPagination):
     max_page_size = 1000
 
 
-class MyUserViewSet(UserViewSet):
-    serializer_class = MyUserProfileSerializer
-    permission_classes = [AllowAny]
+class MyUserViewSet(viewsets.ModelViewSet):
+
+    queryset = MyUser.objects.all()
     pagination_class = MyPagination
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return MyUserCreateSerializer
+        elif self.action in ['profile', 'subscribe', 'subscriptions']:
+            return MyUserProfileSerializer
+        elif self.action == 'retrieve':
+            return MyUserProfileSerializer
+        else:
+            return MyUserSubscriptionSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = MyUserProfileSerializer(
+                page, many=True, context={'request': request}
+            )
+            return self.get_paginated_response(serializer.data)
+        serializer = MyUserProfileSerializer(
+            queryset, many=True, context={'request': request}
+        )
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
     @action(detail=False, methods=['get'], url_path='me')
     def current_user(self, request):
@@ -106,3 +134,25 @@ class MyUserViewSet(UserViewSet):
             context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'])
+    def set_password(self, request):
+        if request.user.is_authenticated:
+            user = request.user
+            new_password = request.data.get('new_password')
+
+            if not user.check_password(request.data.get('current_password')):
+                return Response(
+                    {'detail': 'Incorrect current password'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            user.set_password(new_password)
+            user.save()
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(
+                {'detail': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )

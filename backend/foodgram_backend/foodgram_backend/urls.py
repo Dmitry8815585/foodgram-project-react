@@ -1,7 +1,5 @@
 from django.contrib import admin
 from django.urls import include, path
-from django.conf import settings
-from django.conf.urls.static import static
 from rest_framework import routers
 from recipes.views import (
     RecipeViewSet, TagViewSet, IngredientViewSet, RecipeIngredientViewSet
@@ -12,7 +10,8 @@ router = routers.DefaultRouter()
 router.register(r'tags', TagViewSet)
 router.register(r'ingredients', IngredientViewSet)
 router.register(
-    r'recipesingredients', RecipeIngredientViewSet)
+    r'recipesingredients', RecipeIngredientViewSet
+)
 router.register(r'recipes', RecipeViewSet)
 router.register(r'users', MyUserViewSet, basename='user')
 
@@ -23,7 +22,7 @@ urlpatterns = [
 ]
 
 
-if settings.DEBUG:
-    urlpatterns += static(
-        settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
-    )
+# if settings.DEBUG:
+#     urlpatterns += static(
+#         settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
+#     )
