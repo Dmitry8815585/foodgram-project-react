@@ -1,24 +1,33 @@
-from rest_framework import viewsets
-from .models import (
-    Recipe, RecipeIngredient, ShoppingCartItem, Tag,
-    Ingredient, UserFavoriteRecipe
-)
-from .serializers import (
-    RecipeSerializer, RecipeIngredientSerializer,
-    TagSerializer, IngredientSerializer
-)
-
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import (
-    AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
-)
-from django.http import HttpResponse
 from collections import defaultdict
-from .permissions import IsRecipeAuthor
+
+from django.http import HttpResponse
+
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly
+)
+from rest_framework.response import Response
+
+from .models import (
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    ShoppingCartItem,
+    Tag,
+    UserFavoriteRecipe
+)
+from .permissions import IsRecipeAuthor
+from .serializers import (
+    IngredientSerializer,
+    RecipeIngredientSerializer,
+    RecipeSerializer,
+    TagSerializer
+)
 
 
 class MyPagination(PageNumberPagination):

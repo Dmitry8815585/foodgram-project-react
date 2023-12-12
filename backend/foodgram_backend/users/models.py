@@ -1,28 +1,23 @@
 from django.contrib.auth.models import AbstractUser
-from django.db import models
-# from django.core.validators import validate_slug
 from django.core.validators import RegexValidator
+from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
 class MyUser(AbstractUser):
     email = models.EmailField(unique=True, max_length=254)
-    # username = models.CharField(
-    #     max_length=150, unique=True
-    # )
     username = models.CharField(
         _("username"),
         max_length=150,
         unique=True,
         help_text=_ (
-            "Required. 150 characters or fewer. Letters, digits, and @/./+/-/_ only."
+            "Letters, digits, and @/./+/-/_ only."
         ),
         validators=[
             RegexValidator(
                 regex=r'^[\w.@+-]+$',
                 message=_(
-                    "Enter a valid username. This value may contain only letters, "
-                    "numbers, and @/./+/-/_ characters."
+                    "Enter a valid username."
                 ),
                 code='invalid_username',
             ),

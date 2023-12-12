@@ -1,14 +1,19 @@
-from rest_framework import serializers
-from django.utils.text import slugify
-from transliterate import translit
+import base64
 
-from .models import (
-    Ingredient, Recipe, RecipeIngredient, Tag, UserFavoriteRecipe
-)
+from django.core.files.base import ContentFile
+from django.utils.text import slugify
+
+from rest_framework import serializers
+from transliterate import translit
 from users.models import MyUser
 
-import base64
-from django.core.files.base import ContentFile
+from .models import (
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    Tag,
+    UserFavoriteRecipe
+)
 
 
 class Base64ImageField(serializers.ImageField):
