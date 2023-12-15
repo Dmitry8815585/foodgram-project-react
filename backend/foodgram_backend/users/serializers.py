@@ -11,7 +11,7 @@ class MyUserCreateSerializer(serializers.ModelSerializer):
     class Meta(UserCreateSerializer.Meta):
         model = MyUser
         fields = (
-            'email', 'id', 'username', 'first_name', 'last_name', 'password',
+            'email', 'id', 'username', 'first_name', 'last_name'
         )
 
     # def get_is_subscribed(self, instance):
