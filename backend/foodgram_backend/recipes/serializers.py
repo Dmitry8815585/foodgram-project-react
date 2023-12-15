@@ -6,6 +6,7 @@ from django.utils.text import slugify
 from rest_framework import serializers
 from transliterate import translit
 from users.models import MyUser
+from users.serializers import MyUserSubscriptionSerializer
 
 from .models import (
     Ingredient,
@@ -63,22 +64,22 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
         ]
 
 
-class UserSerializer(serializers.ModelSerializer):
+# class UserSerializer(serializers.ModelSerializer):
 
-    is_subscribed = serializers.SerializerMethodField()
+#     is_subscribed = serializers.SerializerMethodField()
 
-    class Meta:
-        model = MyUser
-        fields = [
-            'id', 'email', 'username',
-            'first_name', 'last_name', 'is_subscribed'
-        ]
+#     class Meta:
+#         model = MyUser
+#         fields = [
+#             'id', 'email', 'username',
+#             'first_name', 'last_name', 'is_subscribed'
+#         ]
 
-    def get_is_subscribed(self, instance):
-        user = self.context.get('request', None).user
-        return user.is_authenticated and user.subscriptions.filter(
-            id=instance.id
-        ).exists()
+#     def get_is_subscribed(self, instance):
+#         user = self.context.get('request', None).user
+#         return user.is_authenticated and user.subscriptions.filter(
+#             id=instance.id
+#         ).exists()
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -89,7 +90,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         child=serializers.IntegerField(), write_only=True
     )
     image = Base64ImageField()
-    author = UserSerializer(source='user', read_only=True)
+    author = MyUserSubscriptionSerializer(source='user', read_only=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
