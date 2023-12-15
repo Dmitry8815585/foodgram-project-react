@@ -34,3 +34,5 @@ translitcodec==0.7.0
 transliterate==1.10.2
 uritemplate==4.1.1
 urllib3==2.1.0
+psycopg2-binary==2.9.3
+django-cors-headers==3.13.0

@@ -2,7 +2,6 @@ from collections import defaultdict
 
 from django.http import HttpResponse
 
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -49,76 +48,80 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
     permission_classes = [AllowAny]
 
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['name']
-
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsRecipeAuthor]
 
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['tags__name', 'user_id']
+    # def create(self, serializer):
+    #     ingredients_data = self.request.data.get('ingredients', [])
+    #     tags_data = self.request.data.get('tags', [])
 
-    def perform_create(self, serializer):
-        ingredients_data = self.request.data.get('ingredients', [])
-        tags_data = self.request.data.get('tags', [])
+    #     for ingredient_data in ingredients_data:
+    #         ingredient_id = ingredient_data.get('ingredient')
+    #         if not Ingredient.objects.filter(pk=ingredient_id).exists():
+    #             return Response(
+    #                 {'detail': (
+    #                     f'Ingredient with id {ingredient_id} does not exist.'
+    #                 )},
+    #                 status=status.HTTP_400_BAD_REQUEST
+    #             )
 
-        for ingredient_data in ingredients_data:
-            ingredient_id = ingredient_data.get('ingredient')
-            if not Ingredient.objects.filter(pk=ingredient_id).exists():
-                return Response(
-                    {'detail': (
-                        f'Ingredient with id {ingredient_id} does not exist.'
-                    )},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+    #         amount = ingredient_data.get('amount')
 
-            amount = ingredient_data.get('amount')
-            if amount is not None and amount < 1:
-                return Response(
-                    {'detail': (
-                        'Ingredient amount must be greater than or equal to 1.'
-                    )},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+    #         if amount is not None and amount < 1:
+    #             return Response(
+    #                 {'detail': (
+    #                     'Ingredient amount must be greater than or equal to 1.'
+    #                 )},
+    #                 status=status.HTTP_400_BAD_REQUEST
+    #             )
 
-        if len(ingredients_data) != len(
-            set((item['ingredient'] for item in ingredients_data))
-        ):
-            return Response(
-                {'detail': 'Duplicate ingredients are not allowed.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    #     if len(ingredients_data) != len(
+    #         set((item['ingredient'] for item in ingredients_data))
+    #     ):
+    #         return Response(
+    #             {'detail': 'Duplicate ingredients are not allowed.'},
+    #             status=status.HTTP_400_BAD_REQUEST
+    #         )
 
-        if len(tags_data) != len(set(tags_data)):
-            return Response(
-                {'detail': 'Duplicate tags are not allowed.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    #     if len(tags_data) != len(set(tags_data)):
+    #         return Response(
+    #             {'detail': 'Duplicate tags are not allowed.'},
+    #             status=status.HTTP_400_BAD_REQUEST
+    #         )
 
-        for tag_id in tags_data:
-            if not Tag.objects.filter(pk=tag_id).exists():
-                return Response(
-                    {'detail': f'Tag with id {tag_id} does not exist.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+    #     for tag_id in tags_data:
+    #         if not Tag.objects.filter(pk=tag_id).exists():
+    #             return Response(
+    #                 {'detail': f'Tag with id {tag_id} does not exist.'},
+    #                 status=status.HTTP_400_BAD_REQUEST
+    #             )
 
-        if not self.request.data.get('image'):
-            return Response(
-                {'detail': 'Image field is required.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    #     if not self.request.data.get('image'):
+    #         return Response(
+    #             {'detail': 'Image field is required.'},
+    #             status=status.HTTP_400_BAD_REQUEST
+    #         )
 
-        cooking_time = self.request.data.get('cooking_time')
-        if cooking_time is not None and cooking_time < 1:
-            return Response(
-                {'detail': 'Cooking time must be greater than or equal to 1.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    #     cooking_time = self.request.data.get('cooking_time')
+    #     if cooking_time is not None and cooking_time < 1:
+    #         return Response(
+    #             {'detail': 'Cooking time must be greater than or equal to 1.'},
+    #             status=status.HTTP_400_BAD_REQUEST
+    #         )
 
-        serializer.save(user=self.request.user)
+    #     serializer.save(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, pk=None):
@@ -154,7 +157,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated]
         )
     @action(detail=True, methods=['post', 'delete'])
-    def shopping_cart(self, request, pk=None):
+    def cart(self, request, pk=None):
         recipe = self.get_object()
         user = request.user
 

@@ -4,7 +4,7 @@ from rest_framework import serializers
 from .models import MyUser
 
 
-class MyUserCreateSerializer(UserCreateSerializer):
+class MyUserCreateSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(max_length=150, required=True)
     last_name = serializers.CharField(max_length=150, required=True)
 
@@ -14,11 +14,11 @@ class MyUserCreateSerializer(UserCreateSerializer):
             'email', 'id', 'username', 'first_name', 'last_name', 'password',
         )
 
-    def get_is_subscribed(self, instance):
-        user = self.context.get('request', None).user
-        return user.is_authenticated and user.subscriptions.filter(
-            id=instance.id
-        ).exists()
+    # def get_is_subscribed(self, instance):
+    #     user = self.context.get('request', None).user
+    #     return user.is_authenticated and user.subscriptions.filter(
+    #         id=instance.id
+    #     ).exists()
 
 
 class MyUserSubscriptionSerializer(serializers.ModelSerializer):

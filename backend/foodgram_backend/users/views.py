@@ -1,4 +1,4 @@
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -12,15 +12,17 @@ from .serializers import (
 
 
 class MyPagination(PageNumberPagination):
-    page_size = 10
+    page_size = 6
     page_size_query_param = 'limit'
     max_page_size = 1000
 
 
 class MyUserViewSet(viewsets.ModelViewSet):
 
+    permission_classes = [permissions.AllowAny]
     queryset = MyUser.objects.all()
     pagination_class = MyPagination
+    serializer_class = MyUserCreateSerializer
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -78,7 +80,7 @@ class MyUserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(detail=True, methods=['post', 'delete'])
-    def subscribe(self, request, id=None):
+    def subscribe(self, request, pk=None):
         target_user = self.get_object()
         serializer = MyUserSubscriptionSerializer(
             target_user, context={'request': request}
@@ -123,15 +125,22 @@ class MyUserViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['get'])
     def subscriptions(self, request):
         user = self.request.user
         subscriptions = user.subscriptions.all()
+        page = self.paginate_queryset(subscriptions)
+
+        if page is not None:
+            serializer = MyUserSubscriptionSerializer(
+                page, many=True, context={'request': request}
+            )
+            return self.get_paginated_response(serializer.data)
+
         serializer = MyUserSubscriptionSerializer(
-            subscriptions, many=True,
-            context={'request': request}
+            subscriptions, many=True, context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
