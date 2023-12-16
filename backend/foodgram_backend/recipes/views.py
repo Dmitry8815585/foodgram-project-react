@@ -133,6 +133,36 @@ class RecipeViewSet(viewsets.ModelViewSet):
             tag = get_object_or_404(Tag, slug=tag_slug)
             queryset = queryset.filter(tags=tag)
 
+        is_favorited_param = self.request.query_params.get(
+            'is_favorited', None
+        )
+
+        if is_favorited_param == '1':
+            if self.request.user.is_authenticated:
+                queryset = queryset.filter(
+                    userfavoriterecipe__user=self.request.user
+                )
+            else:
+                return Response(
+                    {'detail': 'Учетные данные не были предоставлены.'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+
+        is_in_shopping_cart = self.request.query_params.get(
+            'is_in_shopping_cart', None
+        )
+
+        if is_in_shopping_cart == '1':
+            if self.request.user.is_authenticated:
+                queryset = queryset.filter(
+                    shopping_cart_users=self.request.user
+                )
+            else:
+                return Response(
+                    {'detail': 'Учетные данные не были предоставлены.'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+
         return queryset
 
     def create(self, request, *args, **kwargs):
@@ -181,8 +211,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             methods=['post', 'delete'],
             permission_classes=[IsAuthenticated]
         )
-    @action(detail=True, methods=['post', 'delete'])
-    def cart(self, request, pk=None):
+    def shopping_cart(self, request, pk=None):
         recipe = self.get_object()
         user = request.user
 
