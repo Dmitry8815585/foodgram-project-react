@@ -1,4 +1,5 @@
 from collections import defaultdict
+from django.shortcuts import get_object_or_404
 
 from django.http import HttpResponse
 
@@ -30,7 +31,7 @@ from .serializers import (
 
 
 class MyPagination(PageNumberPagination):
-    page_size = 10
+    page_size = 6
     page_size_query_param = 'limit'
     max_page_size = 1000
 
@@ -47,6 +48,16 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
     pagination_class = None
     permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        queryset = Ingredient.objects.all()
+
+        name_query = self.request.query_params.get('name', None)
+
+        if name_query:
+            queryset = queryset.filter(name__icontains=name_query)
+
+        return queryset
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -113,6 +124,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
     #         )
 
     #     serializer.save(user=self.request.user)
+    def get_queryset(self):
+        queryset = Recipe.objects.all()
+
+        tag_slug = self.request.query_params.get('tags', None)
+
+        if tag_slug:
+            tag = get_object_or_404(Tag, slug=tag_slug)
+            queryset = queryset.filter(tags=tag)
+
+        return queryset
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -123,7 +144,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
 
-    @action(detail=True, methods=['post', 'delete'])
+    @action(
+            detail=True,
+            methods=['post', 'delete'],
+            permission_classes=[IsAuthenticated]
+        )
     def favorite(self, request, pk=None):
         recipe = self.get_object()
 
