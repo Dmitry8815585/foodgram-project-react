@@ -37,6 +37,7 @@ class Recipe(models.Model):
     image = models.ImageField(upload_to='recipe_images/')
     text = models.TextField()
     cooking_time = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def is_in_user_shopping_cart(self, user):
         return self.shopping_cart_users.filter(pk=user.pk).exists()
@@ -46,6 +47,9 @@ class Recipe(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['-created_at']
 
 
 class RecipeIngredient(models.Model):

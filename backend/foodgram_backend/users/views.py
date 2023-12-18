@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -33,6 +34,16 @@ class MyUserViewSet(viewsets.ModelViewSet):
             return MyUserProfileSerializer
         else:
             return MyUserSubscriptionSerializer
+
+    def get_queryset(self):
+        queryset = MyUser.objects.all()
+        user_id = self.kwargs.get('pk')
+
+        if user_id:
+            user = get_object_or_404(MyUser, pk=user_id)
+            queryset = MyUser.objects.filter(pk=user.id)
+
+        return queryset
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())

@@ -1,4 +1,5 @@
 import base64
+from django.utils import timezone
 
 from django.core.files.base import ContentFile
 from django.utils.text import slugify
@@ -99,6 +100,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         return False
 
     def create(self, validated_data):
+        validated_data['created_at'] = timezone.now()
+
         ingredients_data = validated_data.pop('recipe_ingredients', [])
         tags_data = validated_data.pop('tags', [])
 

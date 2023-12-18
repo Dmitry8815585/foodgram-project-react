@@ -28,6 +28,7 @@ from .serializers import (
     RecipeSerializer,
     TagSerializer
 )
+from django.db.models import Q
 
 
 class MyPagination(PageNumberPagination):
@@ -127,11 +128,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Recipe.objects.all()
 
-        tag_slug = self.request.query_params.get('tags', None)
+        # tag_slug = self.request.query_params.get('tags', None)
 
-        if tag_slug:
-            tag = get_object_or_404(Tag, slug=tag_slug)
-            queryset = queryset.filter(tags=tag)
+        # if tag_slug:
+        #     tag = get_object_or_404(Tag, slug=tag_slug)
+        #     queryset = queryset.filter(tags=tag)
+        tag_slugs = self.request.query_params.getlist('tags', None)
+
+        if tag_slugs:
+            tag_queries = [Q(tags__slug=tag_slug) for tag_slug in tag_slugs]
+
+            tag_filter = tag_queries.pop()
+            for tag_query in tag_queries:
+                tag_filter |= tag_query
+
+            queryset = queryset.filter(tag_filter).distinct()
 
         is_favorited_param = self.request.query_params.get(
             'is_favorited', None
@@ -162,6 +173,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     {'detail': 'Учетные данные не были предоставлены.'},
                     status=status.HTTP_401_UNAUTHORIZED
                 )
+
+        author_id = self.request.query_params.get('author', None)
+        if author_id:
+            queryset = queryset.filter(user__id=author_id)
 
         return queryset
 
