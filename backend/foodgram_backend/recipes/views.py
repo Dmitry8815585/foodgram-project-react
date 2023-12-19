@@ -1,9 +1,9 @@
 from collections import defaultdict
-from django.shortcuts import get_object_or_404
 
+from django.db.models import Q
 from django.http import HttpResponse
 
-from rest_framework import status, viewsets
+from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import (
@@ -28,7 +28,6 @@ from .serializers import (
     RecipeSerializer,
     TagSerializer
 )
-from django.db.models import Q
 
 
 class MyPagination(PageNumberPagination):
@@ -66,79 +65,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsRecipeAuthor]
 
-    # def create(self, serializer):
-    #     ingredients_data = self.request.data.get('ingredients', [])
-    #     tags_data = self.request.data.get('tags', [])
-
-    #     for ingredient_data in ingredients_data:
-    #         ingredient_id = ingredient_data.get('ingredient')
-    #         if not Ingredient.objects.filter(pk=ingredient_id).exists():
-    #             return Response(
-    #                 {'detail': (
-    #                     f'Ingredient with id {ingredient_id} does not exist.'
-    #                 )},
-    #                 status=status.HTTP_400_BAD_REQUEST
-    #             )
-
-    #         amount = ingredient_data.get('amount')
-
-    #         if amount is not None and amount < 1:
-    #             return Response(
-    #                 {'detail': (
-    #                     'Ingredient amount must be greater than or equal to 1.'
-    #                 )},
-    #                 status=status.HTTP_400_BAD_REQUEST
-    #             )
-
-    #     if len(ingredients_data) != len(
-    #         set((item['ingredient'] for item in ingredients_data))
-    #     ):
-    #         return Response(
-    #             {'detail': 'Duplicate ingredients are not allowed.'},
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
-
-    #     if len(tags_data) != len(set(tags_data)):
-    #         return Response(
-    #             {'detail': 'Duplicate tags are not allowed.'},
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
-
-    #     for tag_id in tags_data:
-    #         if not Tag.objects.filter(pk=tag_id).exists():
-    #             return Response(
-    #                 {'detail': f'Tag with id {tag_id} does not exist.'},
-    #                 status=status.HTTP_400_BAD_REQUEST
-    #             )
-
-    #     if not self.request.data.get('image'):
-    #         return Response(
-    #             {'detail': 'Image field is required.'},
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
-
-    #     cooking_time = self.request.data.get('cooking_time')
-    #     if cooking_time is not None and cooking_time < 1:
-    #         return Response(
-    #             {'detail': 'Cooking time must be greater than or equal to 1.'},
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
-
-    #     serializer.save(user=self.request.user)
     def get_queryset(self):
         queryset = Recipe.objects.all()
 
-        # tag_slug = self.request.query_params.get('tags', None)
-
-        # if tag_slug:
-        #     tag = get_object_or_404(Tag, slug=tag_slug)
-        #     queryset = queryset.filter(tags=tag)
         tag_slugs = self.request.query_params.getlist('tags', None)
 
         if tag_slugs:
             tag_queries = [Q(tags__slug=tag_slug) for tag_slug in tag_slugs]
 
             tag_filter = tag_queries.pop()
+
             for tag_query in tag_queries:
                 tag_filter |= tag_query
 
@@ -183,7 +119,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(user=request.user)
+
+        try:
+            serializer.save(user=request.user)
+        except serializers.ValidationError as e:
+            return Response(
+                {'detail': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
@@ -257,18 +201,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
             shopping_cart_users=request.user
         )
 
-        shopping_cart_dict = defaultdict(int)
+        shopping_cart_dict = defaultdict(list)
 
         for recipe in recipes_in_cart:
             for ingredient in recipe.recipe_ingredients.all():
                 key = f"{ingredient.ingredient.name}"
-                shopping_cart_dict[key] += ingredient.amount
+                shopping_cart_dict[key].append({
+                    'amount': ingredient.amount,
+                    'measurement_unit': ingredient.ingredient.measurement_unit
+                })
 
         shopping_cart_text = "\n".join(
-            f"{key} ----- {amount}"
-            f" ({ingredient.ingredient.measurement_unit})" for (
-                key, amount
-            ) in shopping_cart_dict.items()
+            f"{key} ----- {entry['amount']} ({entry['measurement_unit']})"
+            for key, entries in shopping_cart_dict.items() for entry in entries
         )
 
         response = HttpResponse(shopping_cart_text, content_type='text/plain')

@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
@@ -9,9 +11,6 @@ from recipes.views import (
 )
 from rest_framework import routers
 from users.views import MyUserViewSet
-
-from django.conf import settings
-from django.conf.urls.static import static
 
 router = routers.DefaultRouter()
 router.register(r'tags', TagViewSet)
