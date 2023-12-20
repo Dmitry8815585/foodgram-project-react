@@ -18,14 +18,21 @@ class RecipeAdminForm(forms.ModelForm):
 class RecipeAdmin(admin.ModelAdmin):
     form = RecipeAdminForm
     inlines = [RecipeIngredientInline]
-    list_display = ('name', 'user', 'cooking_time', 'favorite_count')
-    search_fields = ('name', 'user__username')
+    list_display = (
+        'name', 'user', 'cooking_time', 'favorite_count'
+    )
+    search_fields = ('name', 'user__username', 'tags__name')
 
     def favorite_count(self, obj):
         return obj.count_favorite_users()
     favorite_count.short_description = 'Favorites'
 
 
+class IngredientAdmin(admin.ModelAdmin):
+    list_display = ('name', 'measurement_unit')
+    search_fields = ('name',)
+
+
 admin.site.register(Tag)
-admin.site.register(Ingredient)
+admin.site.register(Ingredient,  IngredientAdmin)
 admin.site.register(Recipe, RecipeAdmin)

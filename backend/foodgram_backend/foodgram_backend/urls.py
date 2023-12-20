@@ -12,6 +12,7 @@ from recipes.views import (
 from rest_framework import routers
 from users.views import MyUserViewSet
 
+
 router = routers.DefaultRouter()
 router.register(r'tags', TagViewSet)
 router.register(r'ingredients', IngredientViewSet)
