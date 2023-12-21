@@ -10,7 +10,7 @@ class MyUser(AbstractUser):
         _("username"),
         max_length=150,
         unique=True,
-        help_text=_ (
+        help_text=_(
             "Letters, digits, and @/./+/-/_ only."
         ),
         validators=[
