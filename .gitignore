@@ -130,3 +130,7 @@ dmypy.json
 
 # .idea
 .idea
+data_b.json
+output.csv
+ingredients.csv
+
