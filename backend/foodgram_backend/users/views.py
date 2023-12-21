@@ -29,22 +29,20 @@ class MyUserViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'create':
             return MyUserCreateSerializer
-        elif self.action in ['profile', 'subscribe', 'subscriptions']:
+        if self.action in [
+            'profile', 'subscribe', 'subscriptions', 'retrieve'
+        ]:
             return MyUserProfileSerializer
-        elif self.action == 'retrieve':
-            return MyUserProfileSerializer
-        else:
-            return MyUserSubscriptionSerializer
+        return MyUserSubscriptionSerializer
 
     def get_queryset(self):
-        queryset = MyUser.objects.all()
         user_id = self.kwargs.get('pk')
 
         if user_id:
             user = get_object_or_404(MyUser, pk=user_id)
-            queryset = MyUser.objects.filter(pk=user.id)
+            return MyUser.objects.filter(pk=user.id)
 
-        return queryset
+        return MyUser.objects.all()
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -172,8 +170,7 @@ class MyUserViewSet(viewsets.ModelViewSet):
             user.save()
 
             return Response(status=status.HTTP_204_NO_CONTENT)
-        else:
-            return Response(
-                {'detail': 'Authentication required'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+        return Response(
+            {'detail': 'Authentication required'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )

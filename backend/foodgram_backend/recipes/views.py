@@ -50,14 +50,13 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        queryset = Ingredient.objects.all()
 
         name_query = self.request.query_params.get('name', None)
 
         if name_query:
-            queryset = queryset.filter(name__icontains=name_query)
+            return Ingredient.objects.filter(name__icontains=name_query)
 
-        return queryset
+        return Ingredient.objects.all()
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -66,8 +65,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly, IsRecipeAuthor]
 
     def get_queryset(self):
-        queryset = Recipe.objects.all()
-
         tag_slugs = self.request.query_params.getlist('tags', None)
 
         if tag_slugs:
@@ -78,7 +75,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             for tag_query in tag_queries:
                 tag_filter |= tag_query
 
-            queryset = queryset.filter(tag_filter).distinct()
+            return Recipe.objects.filter(tag_filter).distinct()
 
         is_favorited_param = self.request.query_params.get(
             'is_favorited', None
@@ -86,14 +83,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if is_favorited_param == '1':
             if self.request.user.is_authenticated:
-                queryset = queryset.filter(
+                return Recipe.objects.filter(
                     userfavoriterecipe__user=self.request.user
                 )
-            else:
-                return Response(
-                    {'detail': 'Учетные данные не были предоставлены.'},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
+            return Response(
+                {'detail': 'Учетные данные не были предоставлены.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
         is_in_shopping_cart = self.request.query_params.get(
             'is_in_shopping_cart', None
@@ -101,20 +97,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if is_in_shopping_cart == '1':
             if self.request.user.is_authenticated:
-                queryset = queryset.filter(
+                return Recipe.objects.filter(
                     shopping_cart_users=self.request.user
                 )
-            else:
-                return Response(
-                    {'detail': 'Учетные данные не были предоставлены.'},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
+            return Response(
+                {'detail': 'Учетные данные не были предоставлены.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
         author_id = self.request.query_params.get('author', None)
         if author_id:
-            queryset = queryset.filter(user__id=author_id)
+            return Recipe.objects.filter(user__id=author_id)
 
-        return queryset
+        return Recipe.objects.all()
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -134,10 +129,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
     @action(
-            detail=True,
-            methods=['post', 'delete'],
-            permission_classes=[IsAuthenticated]
-        )
+        detail=True,
+        methods=['post', 'delete'],
+        permission_classes=[IsAuthenticated]
+    )
     def favorite(self, request, pk=None):
         recipe = self.get_object()
 
@@ -151,7 +146,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 {'detail': 'Recipe already in favorites.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        elif request.method == 'DELETE' and not created:
+        if request.method == 'DELETE' and not created:
             user_favorite.delete()
 
         response_data = {
@@ -166,10 +161,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(response_data, status=status.HTTP_200_OK)
 
     @action(
-            detail=True,
-            methods=['post', 'delete'],
-            permission_classes=[IsAuthenticated]
-        )
+        detail=True,
+        methods=['post', 'delete'],
+        permission_classes=[IsAuthenticated]
+    )
     def shopping_cart(self, request, pk=None):
         recipe = self.get_object()
         user = request.user

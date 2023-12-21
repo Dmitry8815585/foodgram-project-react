@@ -2,11 +2,9 @@ import base64
 
 from django.core.files.base import ContentFile
 from django.utils import timezone
-from django.utils.text import slugify
 
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from transliterate import translit
 from users.serializers import MyUserSubscriptionSerializer
 
 from .models import (
@@ -32,15 +30,6 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ['id', 'name', 'color', 'slug']
-
-    def create(self, validated_data):
-        transliterated_name = translit(
-            validated_data['name'], 'ru', reversed=True
-            )
-        validated_data['slug'] = slugify(transliterated_name)
-
-        tag = Tag.objects.create(**validated_data)
-        return tag
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -80,7 +69,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = [
-            'id', 'tags', 'author', 'ingredients',  'is_favorited',
+            'id', 'tags', 'author', 'ingredients', 'is_favorited',
             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
         ]
 
@@ -93,11 +82,10 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_is_favorited(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            user_favorite = UserFavoriteRecipe.objects.filter(
+            return UserFavoriteRecipe.objects.filter(
                 user=request.user,
                 recipe=obj
             ).exists()
-            return user_favorite
         return False
 
     def create(self, validated_data):
