@@ -1,4 +1,4 @@
-name: Main Foodgram Workflow
+name: Master Foodgram Workflow
 on:
   # Событие push возникает,
   # когда изменения исходного кода приходят на сервер GitHub
