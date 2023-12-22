@@ -22,7 +22,7 @@ jobs:
       with:
         python-version: 3.9
     # Обновляем pip, устанавливаем flake8 и flake8-isort, 
-    # устанавливаем зависимости проекта
+    # устанавливаем зависимости проект_a
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip 
