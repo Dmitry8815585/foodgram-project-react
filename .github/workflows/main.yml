@@ -116,6 +116,11 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
+    - name: Display SSH Key
+      run: echo "${{ secrets.SSH_KEY }}"
+    - name: Add Host to Known Hosts
+      run: ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+
     # Копируем docker-compose.production.yml на продакшен-сервер
     - name: Copy docker-compose.yml via ssh
       uses: appleboy/ssh-action@master
