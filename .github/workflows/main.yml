@@ -127,6 +127,10 @@ jobs:
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         source: "README.md"
         target: "foodgram"
+    - name: Debug
+      run: |
+        ssh ${{ secrets.USER }}@${{ secrets.HOST }} -i ${{ secrets.SSH_KEY }} -o StrictHostKeyChecking=no "ls -la foodgram"
+
     # - name: Executing remote ssh commands to deploy
     #   uses: appleboy/ssh-action@master
     #   with:
