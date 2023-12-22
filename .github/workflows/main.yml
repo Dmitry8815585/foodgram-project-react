@@ -135,7 +135,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         # Параметр script передаёт в action appleboy/ssh-action команды,
-        # которые нужно выполнит на сервере, 
+        # которые нужно выполнить на сервере, 
         # с которым установлено соединение
         script: |
           cd foodgram
