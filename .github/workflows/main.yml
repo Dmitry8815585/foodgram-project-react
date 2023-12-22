@@ -119,7 +119,7 @@ jobs:
 
     # Копируем docker-compose.production.yml на продакшен-сервер
     - name: Copy README.md via ssh
-      uses: appleboy/ssh-action@master
+      uses: appleboy/csp-action@master
     # Передаём параметры для action appleboy/scp-action:
       with:
         host: ${{ secrets.HOST }}
