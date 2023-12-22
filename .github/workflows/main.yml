@@ -118,15 +118,15 @@ jobs:
       uses: actions/checkout@v3
 
     # Копируем docker-compose.production.yml на продакшен-сервер
-    - name: Copy README.md via ssh
-      uses: appleboy/csp-action@master
+    - name: Copy docker-compose.production.yml via ssh
+      uses: appleboy/ssh-action@master
     # Передаём параметры для action appleboy/scp-action:
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USER }}
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
-        source: "README.md"
+        source: "docker-compose.production.yml"
         target: "foodgram"
 
     # - name: Executing remote ssh commands to deploy
