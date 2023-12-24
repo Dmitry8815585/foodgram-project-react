@@ -18,13 +18,13 @@ services:
       - static_volume:/backend_static
       - media:/media/
   frontend:
-    image: good8815585/foodgram_frontend  # Качаем с Docker Hub
+    image: good8815585/foodgram_frontend
     env_file: .env
     command: cp -r /app/build/. /frontend_static/
     volumes:
       - static_volume:/frontend_static
   gateway:
-    image: good8815585/foodgram_gateway  # Качаем с Docker Hub
+    image: good8815585/foodgram_gateway
     env_file: .env
     volumes:
       - static_volume:/staticfiles/

@@ -5,6 +5,7 @@ from django.http import HttpResponse
 
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import (
     AllowAny,
@@ -65,6 +66,26 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly, IsRecipeAuthor]
 
     def get_queryset(self):
+
+        is_favorited_param = self.request.query_params.get(
+            'is_favorited', None
+        )
+
+        if is_favorited_param == '1':
+            if not self.request.user.is_authenticated:
+                raise PermissionDenied(
+                    detail='Учетные данные не были предоставлены.'
+                )
+
+            return Recipe.objects.filter(
+                userfavoriterecipe__user=self.request.user
+            )
+
+        author_id = self.request.query_params.get('author', None)
+
+        if author_id:
+            return Recipe.objects.filter(user__id=author_id)
+
         tag_slugs = self.request.query_params.getlist('tags', None)
 
         if tag_slugs:
@@ -76,20 +97,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 tag_filter |= tag_query
 
             return Recipe.objects.filter(tag_filter).distinct()
-
-        is_favorited_param = self.request.query_params.get(
-            'is_favorited', None
-        )
-
-        if is_favorited_param == '1':
-            if self.request.user.is_authenticated:
-                return Recipe.objects.filter(
-                    userfavoriterecipe__user=self.request.user
-                )
-            return Response(
-                {'detail': 'Учетные данные не были предоставлены.'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
 
         is_in_shopping_cart = self.request.query_params.get(
             'is_in_shopping_cart', None
@@ -104,10 +111,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 {'detail': 'Учетные данные не были предоставлены.'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
-
-        author_id = self.request.query_params.get('author', None)
-        if author_id:
-            return Recipe.objects.filter(user__id=author_id)
 
         return Recipe.objects.all()
 

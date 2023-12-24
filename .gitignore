@@ -134,3 +134,7 @@ data_b.json
 output.csv
 ingredients.csv
 
+media/
+postman-collection/
+infra/
+data/
