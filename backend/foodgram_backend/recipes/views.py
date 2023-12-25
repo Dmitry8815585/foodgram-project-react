@@ -199,19 +199,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
             shopping_cart_users=request.user
         )
 
-        shopping_cart_dict = defaultdict(list)
+        shopping_cart_dict = defaultdict(int)
 
         for recipe in recipes_in_cart:
             for ingredient in recipe.recipe_ingredients.all():
                 key = f"{ingredient.ingredient.name}"
-                shopping_cart_dict[key].append({
-                    'amount': ingredient.amount,
-                    'measurement_unit': ingredient.ingredient.measurement_unit
-                })
+                shopping_cart_dict[key] += ingredient.amount
 
         shopping_cart_text = "\n".join(
-            f"{key} ----- {entry['amount']} ({entry['measurement_unit']})"
-            for key, entries in shopping_cart_dict.items() for entry in entries
+            f"{key} --- {quantity} ({ingredient.ingredient.measurement_unit})"
+            for key, quantity in shopping_cart_dict.items()
         )
 
         response = HttpResponse(shopping_cart_text, content_type='text/plain')
