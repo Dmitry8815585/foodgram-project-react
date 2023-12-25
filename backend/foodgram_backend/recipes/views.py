@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
@@ -64,6 +64,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsRecipeAuthor]
+
+    def get_object(self):
+        try:
+            return Recipe.objects.get(pk=self.kwargs['pk'])
+        except Recipe.DoesNotExist:
+            raise Http404
 
     def get_queryset(self):
 
