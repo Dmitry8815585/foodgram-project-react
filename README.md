@@ -11,7 +11,7 @@ pass: 190284aa
 
 # Foodgram
 
-[![Master Foodgram workflow](https://github.com/Dmitry8815585/foodgram-project-react/actions/workflows/main.yml/badge.svg)(https://github.com/Dmitry8815585/foodgram-project-react/actions/workflows/main.yml)]
+![Master Foodgram workflow](https://github.com/Dmitry8815585/foodgram-project-react/actions/workflows/main.yml/badge.svg)
 
 Foodgram - сервис для публикации рецептов.
 
