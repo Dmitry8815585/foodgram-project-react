@@ -1,11 +1,16 @@
 import base64
 
 from django.core.files.base import ContentFile
-from django.utils import timezone
+from django.db import transaction
 
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from users.serializers import MyUserSubscriptionSerializer
+
+from foodgram_backend.constants import (
+    COOKING_TIME_MIN,
+    RECIPE_INGREDIENT_AMOUNT_MIN
+)
 
 from .models import (
     Ingredient,
@@ -29,14 +34,14 @@ class Base64ImageField(serializers.ImageField):
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ['id', 'name', 'color', 'slug']
+        fields = ('id', 'name', 'color', 'slug')
 
 
 class IngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredient
-        fields = ['id', 'name', 'measurement_unit']
+        fields = ('id', 'name', 'measurement_unit')
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
@@ -88,28 +93,20 @@ class RecipeSerializer(serializers.ModelSerializer):
             ).exists()
         return False
 
+    @transaction.atomic
     def create(self, validated_data):
 
         if not self.context['request'].data.get('image'):
             raise ValidationError({'detail': 'Image field is required.'})
-
-        validated_data['created_at'] = timezone.now()
 
         ingredients_data = validated_data.pop('recipe_ingredients', [])
         tags_data = validated_data.pop('tags', [])
 
         recipe = Recipe.objects.create(**validated_data)
 
-        for ingredient_data in ingredients_data:
-            ingredient_id = ingredient_data['ingredient']['id']
-            amount = ingredient_data['amount']
-            ingredient = Ingredient.objects.get(pk=ingredient_id)
-
-            RecipeIngredient.objects.create(
-                recipe=recipe, ingredient=ingredient, amount=amount
-            )
-
         recipe.tags.set(tags_data)
+
+        self._create_or_update_recipe_ingredients(recipe, ingredients_data)
 
         return recipe
 
@@ -123,6 +120,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         return representation
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.image = validated_data.get('image', instance.image)
@@ -135,37 +133,36 @@ class RecipeSerializer(serializers.ModelSerializer):
         instance.tags.set(tags_data)
 
         ingredients_data = validated_data.get('recipe_ingredients', [])
-        instance.recipe_ingredients.all().delete()
+        RecipeIngredient.objects.filter(recipe=instance).delete()
+        
+        self._create_or_update_recipe_ingredients(instance, ingredients_data)
+
+        instance.save()
+        return instance
+
+    def _create_or_update_recipe_ingredients(self, recipe, ingredients_data):
+        recipe_ingredients = []
         for ingredient_data in ingredients_data:
             ingredient_id = ingredient_data['ingredient']['id']
             amount = ingredient_data['amount']
             ingredient = Ingredient.objects.get(pk=ingredient_id)
 
-            RecipeIngredient.objects.create(
-                recipe=instance, ingredient=ingredient, amount=amount
+            recipe_ingredient = RecipeIngredient(
+                recipe=recipe, ingredient=ingredient, amount=amount
             )
+            recipe_ingredients.append(recipe_ingredient)
 
-        instance.save()
-        return instance
+        RecipeIngredient.objects.bulk_create(recipe_ingredients)
 
     def validate_ingredient(self, ingredient_data):
         ingredient_id = ingredient_data['ingredient']['id']
         amount = ingredient_data.get('amount')
 
-        if amount is not None and amount < 1:
+        if amount is not None and amount < RECIPE_INGREDIENT_AMOUNT_MIN:
             raise serializers.ValidationError(
                 'Ingredient amount must be greater than or equal to 1'
                 + f' for ingredient with id {ingredient_id}.'
             )
-
-        try:
-            Ingredient.objects.get(pk=ingredient_id)
-        except Ingredient.DoesNotExist:
-            raise serializers.ValidationError(
-                f'Ingredient with id {ingredient_id} does not exist.'
-            )
-
-        return ingredient_data
 
     def validate_tags(self, tags_data):
         unique_tags = set()
@@ -189,7 +186,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         return tags_data
 
     def validate_cooking_time(self, cooking_time):
-        if cooking_time is not None and cooking_time < 1:
+        if cooking_time is not None and cooking_time < COOKING_TIME_MIN:
             raise serializers.ValidationError(
                 {'detail': 'Cooking time must be greater than or equal to 1.'}
 

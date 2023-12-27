@@ -6,7 +6,6 @@ from django.http import Http404, HttpResponse
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
@@ -29,12 +28,6 @@ from .serializers import (
     RecipeSerializer,
     TagSerializer
 )
-
-
-class MyPagination(PageNumberPagination):
-    page_size = 6
-    page_size_query_param = 'limit'
-    max_page_size = 1000
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
