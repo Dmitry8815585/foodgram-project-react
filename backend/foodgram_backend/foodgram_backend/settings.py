@@ -149,4 +149,4 @@ DJOSER = {
     },
 }
 
-CSRF_COOKIE_SAMESITE = 'None'
+# CSRF_COOKIE_SAMESITE = 'None'
