@@ -76,4 +76,4 @@ Foodgram - сервис для публикации рецептов.
 
 ## Примеры запросов (документация к проекту).
 
-    (https://foodgramfoodgram.ddns.net/api/docs/redoc.html "документация")
+    [документация](https://foodgramfoodgram.ddns.net/api/docs/redoc.html)
