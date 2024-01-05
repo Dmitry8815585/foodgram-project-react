@@ -4,20 +4,22 @@ from rest_framework import serializers
 
 from .models import MyUser
 
+UserModel = get_user_model()
+
 
 class MyUserCreateSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(max_length=150, required=True)
     last_name = serializers.CharField(max_length=150, required=True)
 
     class Meta:
-        model = get_user_model()
+        model = UserModel
         fields = (
             'email', 'id', 'username', 'first_name', 'last_name', 'password'
         )
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
-        return get_user_model().objects.create_user(**validated_data)
+        return UserModel.objects.create_user(**validated_data)
 
 
 class MyUserSubscriptionSerializer(serializers.ModelSerializer):
@@ -39,16 +41,15 @@ class MyUserSubscriptionSerializer(serializers.ModelSerializer):
         ).exists()
 
     def get_recipes(self, instance):
-        return [
-            {
-                'id': recipe.id,
-                'name': recipe.name,
-                'image': self.context['request'].build_absolute_uri(
-                    recipe.image.url
-                ) if recipe.image else None,
-                'cooking_time': recipe.cooking_time,
-            } for recipe in instance.recipe_set.all()
-        ]
+        from recipes.serializers import FavoriteSerializer
+        recipes = instance.recipe_set.all()
+        request = self.context.get('request')
+
+        favorite_serializer = FavoriteSerializer(
+            recipes, many=True, context={'request': request}
+        )
+
+        return favorite_serializer.data
 
     def get_recipes_count(self, instance):
         return instance.recipe_set.count()

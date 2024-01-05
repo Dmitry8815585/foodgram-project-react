@@ -32,6 +32,8 @@ class MyUser(AbstractUser):
         'self', through='UserSubscription',
         symmetrical=False, related_name='subscribers'
     )
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['first_name', 'last_name']
 
     def __str__(self):
         return self.username

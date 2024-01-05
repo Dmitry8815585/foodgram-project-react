@@ -44,6 +44,26 @@ class IngredientSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit')
 
 
+class FavoriteSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+
+class ShoppingCartSerializer(serializers.ModelSerializer):
+
+    is_in_shopping_cart = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time', 'is_in_shopping_cart')
+
+    def get_is_in_shopping_cart(self, recipe):
+        user = self.context['request'].user
+        return recipe.is_in_user_shopping_cart(user)
+
+
 class RecipeIngredientSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='ingredient.id')
     name = serializers.CharField(source='ingredient.name', required=False)
@@ -134,7 +154,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         ingredients_data = validated_data.get('recipe_ingredients', [])
         RecipeIngredient.objects.filter(recipe=instance).delete()
-        
+
         self._create_or_update_recipe_ingredients(instance, ingredients_data)
 
         instance.save()

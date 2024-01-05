@@ -1,9 +1,10 @@
 from django.shortcuts import get_object_or_404
 
+from recipes.pagination import MyPagination
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from users.models import MyUser, UserSubscription
 
 from .serializers import (
@@ -11,12 +12,6 @@ from .serializers import (
     MyUserProfileSerializer,
     MyUserSubscriptionSerializer
 )
-
-
-class MyPagination(PageNumberPagination):
-    page_size = 6
-    page_size_query_param = 'limit'
-    max_page_size = 1000
 
 
 class MyUserViewSet(viewsets.ModelViewSet):
@@ -30,7 +25,10 @@ class MyUserViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return MyUserCreateSerializer
         if self.action in [
-            'profile', 'subscribe', 'subscriptions', 'retrieve'
+            'profile',
+            'subscribe',
+            'subscriptions',
+            'retrieve'
         ]:
             return MyUserProfileSerializer
         return MyUserSubscriptionSerializer
@@ -89,54 +87,6 @@ class MyUserViewSet(viewsets.ModelViewSet):
         )
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post', 'delete'])
-    def subscribe(self, request, pk=None):
-        target_user = self.get_object()
-        serializer = MyUserSubscriptionSerializer(
-            target_user, context={'request': request}
-        )
-
-        current_user = request.user
-
-        if not request.user.is_authenticated:
-            return Response(
-                {'detail': 'Authentication required'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-
-        if current_user == target_user:
-            return Response(
-                {'detail': 'Cannot subscribe to yourself'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if request.method == 'POST':
-            if UserSubscription.objects.filter(
-                from_user=current_user, to_user=target_user
-            ).exists():
-                return Response(
-                    {'detail': 'Already subscribed'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            UserSubscription.objects.create(
-                from_user=current_user, to_user=target_user
-            )
-
-        elif request.method == 'DELETE':
-            try:
-                subscription = UserSubscription.objects.get(
-                    from_user=current_user, to_user=target_user
-                )
-                subscription.delete()
-            except UserSubscription.DoesNotExist:
-                return Response(
-                    {'detail': 'Not subscribed'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
     @action(detail=False, methods=['get'])
     def subscriptions(self, request):
         user = self.request.user
@@ -174,3 +124,61 @@ class MyUserViewSet(viewsets.ModelViewSet):
             {'detail': 'Authentication required'},
             status=status.HTTP_401_UNAUTHORIZED
         )
+
+
+class SubscribeUserView(APIView):
+    def post(self, request, pk=None):
+        target_user = get_object_or_404(MyUser, pk=pk)
+        current_user = request.user
+
+        if not request.user.is_authenticated:
+            return Response(
+                {'detail': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        if current_user == target_user:
+            return Response(
+                {'detail': 'Cannot subscribe to yourself'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if UserSubscription.objects.filter(
+            from_user=current_user, to_user=target_user
+        ).exists():
+            return Response(
+                {'detail': 'Already subscribed'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        UserSubscription.objects.create(
+            from_user=current_user, to_user=target_user
+        )
+
+        serializer = MyUserSubscriptionSerializer(
+            target_user, context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, pk=None):
+        target_user = get_object_or_404(MyUser, pk=pk)
+        current_user = request.user
+
+        if not request.user.is_authenticated:
+            return Response(
+                {'detail': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        try:
+            subscription = UserSubscription.objects.get(
+                from_user=current_user, to_user=target_user
+            )
+            subscription.delete()
+        except UserSubscription.DoesNotExist:
+            return Response(
+                {'detail': 'Not subscribed'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -4,8 +4,10 @@ volumes:
   pg_data:
   static:
   media:
+  docs:
 
 services:
+
   db:
     image: postgres:13.10
     env_file: .env
@@ -32,6 +34,7 @@ services:
     volumes:
       - static:/staticfiles/
       - media:/media/
+      - docs:/usr/share/nginx/html/api/docs
     depends_on:
       - db
     ports:
