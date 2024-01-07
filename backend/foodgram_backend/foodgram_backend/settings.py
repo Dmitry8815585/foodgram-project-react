@@ -152,5 +152,6 @@ DJOSER = {
 CSRF_COOKIE_SAMESITE = 'None'
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://https://foodgramfoodgram.ddns.net'
+
+    'https://foodgramfoodgram.ddns.net'
 ]
