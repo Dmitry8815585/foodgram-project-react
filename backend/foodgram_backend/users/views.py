@@ -127,15 +127,12 @@ class MyUserViewSet(viewsets.ModelViewSet):
 
 
 class SubscribeUserView(APIView):
+
+    permission_classes = [permissions.IsAuthenticated]
+
     def post(self, request, pk=None):
         target_user = get_object_or_404(MyUser, pk=pk)
         current_user = request.user
-
-        if not request.user.is_authenticated:
-            return Response(
-                {'detail': 'Authentication required'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
 
         if current_user == target_user:
             return Response(
