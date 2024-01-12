@@ -42,10 +42,12 @@ class MyUser(AbstractUser):
 class UserSubscription(models.Model):
 
     from_user = models.ForeignKey(
-        'MyUser', related_name='subscriptions_from', on_delete=models.CASCADE
+        'MyUser', related_name='subscriptions_from',
+        on_delete=models.CASCADE
     )
     to_user = models.ForeignKey(
-        'MyUser', related_name='subscriptions_to', on_delete=models.CASCADE
+        'MyUser', related_name='subscriptions_to',
+        on_delete=models.CASCADE
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

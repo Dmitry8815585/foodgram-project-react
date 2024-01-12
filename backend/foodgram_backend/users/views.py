@@ -10,7 +10,8 @@ from users.models import MyUser, UserSubscription
 from .serializers import (
     MyUserCreateSerializer,
     MyUserProfileSerializer,
-    MyUserSubscriptionSerializer
+    MyUserSubscriptionSerializer,
+    SubscribeUserSerializer
 )
 
 
@@ -134,19 +135,11 @@ class SubscribeUserView(APIView):
         target_user = get_object_or_404(MyUser, pk=pk)
         current_user = request.user
 
-        if current_user == target_user:
-            return Response(
-                {'detail': 'Cannot subscribe to yourself'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        serializer = SubscribeUserSerializer(
+            target_user, data=request.data, context={'request': request}
+        )
 
-        if UserSubscription.objects.filter(
-            from_user=current_user, to_user=target_user
-        ).exists():
-            return Response(
-                {'detail': 'Already subscribed'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        serializer.is_valid(raise_exception=True)
 
         UserSubscription.objects.create(
             from_user=current_user, to_user=target_user
@@ -160,12 +153,6 @@ class SubscribeUserView(APIView):
     def delete(self, request, pk=None):
         target_user = get_object_or_404(MyUser, pk=pk)
         current_user = request.user
-
-        if not request.user.is_authenticated:
-            return Response(
-                {'detail': 'Authentication required'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
 
         try:
             subscription = UserSubscription.objects.get(

@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 
 from rest_framework import serializers
 
-from .models import MyUser
+from .models import MyUser, UserSubscription
 
 UserModel = get_user_model()
 
@@ -44,11 +44,9 @@ class MyUserSubscriptionSerializer(serializers.ModelSerializer):
         from recipes.serializers import FavoriteSerializer
         recipes = instance.recipe_set.all()
         request = self.context.get('request')
-
         favorite_serializer = FavoriteSerializer(
             recipes, many=True, context={'request': request}
         )
-
         return favorite_serializer.data
 
     def get_recipes_count(self, instance):
@@ -70,3 +68,33 @@ class MyUserProfileSerializer(serializers.ModelSerializer):
         return user.is_authenticated and user.subscriptions.filter(
             id=instance.id
         ).exists()
+
+
+class SubscribeUserSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MyUser
+        fields = [
+            'is_subscribed',
+        ]
+
+    def get_is_subscribed(self, instance):
+        user = self.context['request'].user
+        return user.is_authenticated and user.subscriptions.filter(
+            id=instance.id
+        ).exists()
+
+    def validate(self, data):
+        request = self.context['request']
+        current_user = request.user
+        target_user = self.instance
+
+        if current_user == target_user:
+            raise serializers.ValidationError("Cannot subscribe to yourself")
+
+        if UserSubscription.objects.filter(
+            from_user=current_user, to_user=target_user
+        ).exists():
+            raise serializers.ValidationError("Already subscribed")
+        return data
