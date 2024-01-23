@@ -6,7 +6,7 @@ https://foodgramfoodgram.ddns.net/
 
 login: 8815585@gmail.com
 //
-pass: 190284aa
+pass: xxxxxx
 
 
 # Foodgram
