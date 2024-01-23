@@ -4,7 +4,7 @@ ip: 158.160.82.152
 
 https://foodgramfoodgram.ddns.net/
 
-login: 8815585@gmail.com
+login: xxxxxxxxxxxx
 //
 pass: xxxxxx
 
