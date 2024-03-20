@@ -1,19 +1,26 @@
-# praktikum_new_diplom
 
-ip: 158.160.82.152
+## https://foodgramfoodgram.ddns.net/
 
-https://foodgramfoodgram.ddns.net/
-
-login: 8815585@gmail.com
-//
-pass: 190284aa
+ip: 158.160.82.152:8000
 
 
-# Foodgram
+## Стек проекта "Foodgram"
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white) ![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white) ![Django REST Framework](https://img.shields.io/badge/Django_REST_Framework-092E20?style=for-the-badge&logo=django&logoColor=white) ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=white) ![Gunicorn](https://img.shields.io/badge/Gunicorn-369639?style=for-the-badge&logo=gunicorn&logoColor=white) ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white) ![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white) ![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white) ![CI/CD](https://img.shields.io/badge/CI/CD-4B32C3?style=for-the-badge&logo=github-actions&logoColor=white)
+
 
 ![Master Foodgram workflow](https://github.com/Dmitry8815585/foodgram-project-react/actions/workflows/main.yml/badge.svg)
 
 Foodgram - сервис для публикации рецептов.
+Сайт для публикации рецептов с возможностью добавлять чужие рецепты в избранное и подписываться на публикации других авторов. Написал весь бэкенд включая api. Разместил проект на виртуальном сервере. 
+    Стек проекта: Python, Django, DRF, React (basics), Gunicorn, JWT, Postman, PostgreSQL, Docker, Nginx, Git, CI&CD
+    В ходе работы над проектом мною было сделано:
+1.	Настроил взаимодействие Python-приложения с внешними API-сервисами;
+2.	Создал собственный API-сервис на базе проекта Django;
+3.	Подключил SPA к бэкенду на Django через API;
+4.	Создал образы и запустил контейнеры Docker;
+5.	Создал, развернул и запустил на сервере мультиконтейнерные приложения;
+6.	Настроил автоматизацию развёртывания проекта (CI&CD) 
+
 
 ## Описание
 
